@@ -1,0 +1,22 @@
+# Example drafts (Bahasa mix is the point). Separate samples with a line of ---
+# Lines starting with # are ignored.
+# Put your own real drafts in test/samples.local.txt (gitignored): run.mjs uses it instead when it exists.
+bro sorry telat, td aku cek api nya masih error 500, mungkin dr BE side ya? cc @alex
+---
+guys PR nya udh aku update sesuai comment kemarin, tolong di review lg ya kalo sempet. thanks!
+https://bitbucket.org/example/repo/pull-requests/123
+---
+aku blm bisa ikut meeting jam 3, ada sync sm tim design. bisa di reschedule ga ke besok pagi?
+---
+REP-6789 udah fixed di staging, tp aku blm test yg case amount out of range. nanti sore aku update lg
+---
+apakah kamu bisa jelasin kenapa endpoint `/v2/bills` return empty list?
+---
+# privacy guard: links, keys, emails, phone, code
+bro td aku cek https://grafana.internal/d/abc?from=now-1h ternyata error nya dr service payment. log nya ada di https://bitbucket.org/acme/app/pull-requests/123 ya
+---
+key staging nya gsk_Ab12Cd34Ef56Gh78Ij90Kl12Mn34Op56Qr78St90Uv12Wx34 udah aku rotate, yg lama jgn dipake lg. kalo ada masalah email ke alex@example.co.id atau wa 0812-3456-7890
+---
+password: hunter2 buat akun test nya, tp jgn di share ke luar tim ya
+---
+kenapa `getAllocationByAmount()` return null kalo `selected_bill_ids` kosong? NIK user nya 3171234567890002

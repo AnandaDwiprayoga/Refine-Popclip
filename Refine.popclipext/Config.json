@@ -1,0 +1,30 @@
+{
+  "name": "Refine",
+  "description": "Rewrite the selected text into natural English in your own style, using Groq.",
+  "icon": "✨",
+  "entitlements": ["network"],
+  "requirements": ["text", "paste"],
+  "options": [
+    {
+      "identifier": "apiKey",
+      "type": "secret",
+      "label": "Groq API key",
+      "description": "From console.groq.com. Stored in your Mac's keychain.",
+      "keychain": "local"
+    },
+    {
+      "identifier": "model",
+      "type": "multiple",
+      "label": "Model",
+      "values": ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"],
+      "defaultValue": "qwen/qwen3.8-27b"
+    },
+    {
+      "identifier": "hiddenTerms",
+      "type": "string",
+      "label": "Never send these words",
+      "description": "Comma-separated, e.g. client or project code names. They're replaced with placeholders before sending and put back after. Links, emails, keys, code, phone numbers and long IDs are always hidden."
+    }
+  ],
+  "module": "refine.js"
+}

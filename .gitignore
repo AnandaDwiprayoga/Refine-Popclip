@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Node (the project has no dependencies, but just in case)
+node_modules/
+npm-debug.log*
+
+# Local secrets and env files: never commit your Groq API key
+.env
+.env.*
+*.local
+
+# Your personal Refine settings and real drafts (see local.config.example.js)
+Refine.popclipext/local.config.js
+test/samples.local.txt
+
+# Claude Code local settings
+.claude/settings.local.json
