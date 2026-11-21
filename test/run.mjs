@@ -3,6 +3,7 @@
 //   export GROQ_API_KEY=gsk_...
 //   node test/run.mjs                          # every sample × every style, default model
 //   node test/run.mjs --styles me,fix          # only some styles
+//   node test/run.mjs --styles translate       # the 🇮🇩 Bahasa Indonesia translation
 //   node test/run.mjs --models all             # compare every model side by side
 //   node test/run.mjs --models openai/gpt-oss-20b
 //   node test/run.mjs --latency 20             # latency benchmark (first sample, "me" style)
@@ -17,8 +18,17 @@ import { dirname, join } from "node:path";
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
-const { API_URL, MODELS, DEFAULT_MODEL, apiHeaders, STYLES, buildRequestBody, extractText } =
-  require("../Refine.popclipext/prompt.js");
+const {
+  API_URL,
+  MODELS,
+  DEFAULT_MODEL,
+  apiHeaders,
+  STYLES,
+  buildRequestBody,
+  TRANSLATE,
+  buildTranslateRequestBody,
+  extractText,
+} = require("../Refine.popclipext/prompt.js");
 const { redact, restore } = require("../Refine.popclipext/redact.js");
 const hiddenTerms = process.env.REFINE_HIDDEN_TERMS || "";
 
@@ -33,7 +43,11 @@ const argValue = (name) => {
   const i = args.indexOf(name);
   return i === -1 ? undefined : args[i + 1];
 };
+// "translate" is accepted as an extra style name; it is not in the default run.
 const styles = (argValue("--styles") || Object.keys(STYLES).join(",")).split(",");
+const buildBody = (text, styleId, model) =>
+  styleId === "translate" ? buildTranslateRequestBody(text, model) : buildRequestBody(text, styleId, model);
+const iconFor = (styleId) => (styleId === "translate" ? TRANSLATE.icon : STYLES[styleId]?.icon ?? "?");
 const modelsArg = argValue("--models") || DEFAULT_MODEL;
 const models = modelsArg === "all" ? Object.keys(MODELS) : modelsArg.split(",");
 const latencyRuns = Number(argValue("--latency") || 0);
@@ -54,7 +68,7 @@ async function callModel(text, styleId, model, attempt = 1) {
   const res = await fetch(API_URL, {
     method: "POST",
     headers: apiHeaders(apiKey),
-    body: JSON.stringify(buildRequestBody(masked, styleId, model)),
+    body: JSON.stringify(buildBody(masked, styleId, model)),
   });
   const data = await res.json();
   const ms = Math.round(performance.now() - started);
@@ -77,7 +91,7 @@ const PROTECTED = [
   /\b[A-Z][A-Z0-9]+-\d+\b/g, // ticket keys
   /:[a-z0-9_+-]+:/g, // emoji shortcodes
 ];
-const PREAMBLE = /^(here('s| is)|sure|certainly|rewritten|revised|"|')/i;
+const PREAMBLE = /^(here('s| is)|sure|certainly|rewritten|revised|berikut|terjemahan|"|')/i;
 
 function check(input, output) {
   const problems = [];
@@ -121,7 +135,7 @@ for (const [i, sample] of samples.entries()) {
   if (items.length) console.log(`\n🔒 sent to Groq:\n${masked}`);
   for (const styleId of styles) {
     for (const model of models) {
-      const label = `${STYLES[styleId]?.icon ?? "?"} ${styleId}${models.length > 1 ? ` · ${short(model)}` : ""}`;
+      const label = `${iconFor(styleId)} ${styleId}${models.length > 1 ? ` · ${short(model)}` : ""}`;
       try {
         const { text, ms } = await callModel(sample, styleId, model);
         const problems = check(sample, text);

@@ -1,9 +1,8 @@
 {
   "name": "Refine",
-  "description": "Rewrite the selected text into natural English in your own style, using Groq.",
+  "description": "Rewrite the selected text into natural English in your own style, or translate any selected text into Bahasa Indonesia, using Groq.",
   "icon": "✨",
   "entitlements": ["network"],
-  "requirements": ["text", "paste"],
   "options": [
     {
       "identifier": "apiKey",

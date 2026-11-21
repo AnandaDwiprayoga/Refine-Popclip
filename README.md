@@ -20,10 +20,12 @@ you get:      Sorry for the late reply! I just checked and the API is still retu
 | 🙏 | Polite | Softer and more diplomatic, without groveling |
 | ✂️ | Short | As concise as possible, keeps every fact, name, number and link |
 | ✅ | Fix only | Translates Bahasa and fixes grammar, keeps your wording |
+| 🇮🇩 | Translate | Shows a Bahasa Indonesia translation of any selected text (English or any other language). Doesn't replace anything |
 
 - **Click** a button to replace the selection. Press **⌘Z** to undo. Your clipboard is restored afterwards.
 - **⌥-click** (Option-click) to see a preview in the PopClip bubble first. Click the preview to paste it.
-- The buttons only appear in editable text fields.
+- The rewrite buttons only appear in editable text fields.
+- **🇮🇩 Translate** works on any selected text, including web pages, PDFs and messages from others. Short translations show in the PopClip bubble. Longer ones (over 160 characters, PopClip's bubble limit) open full screen in Large Type and are also copied to your clipboard. In an editable field you can click the bubble to paste the translation.
 - Keeps `@mentions`, `#channels`, links, code, emoji, ticket keys (`REP-1234`), numbers and Slack formatting intact.
 - **Privacy guard:** links, emails, API keys, passwords, phone numbers, card numbers, code and your own private words are replaced with placeholders *before* anything leaves your Mac. [More below](#privacy-guard).
 - Falls back to a second model automatically if the first one fails or is rate limited.
@@ -145,7 +147,7 @@ pasted:         Please check https://grafana.internal/d/abc. The token is ghp_ab
 ## Security notes
 
 - **Groq data controls:** Groq keeps abuse and reliability logs for up to 30 days by default. Turn that off, or enable Zero Data Retention, under Settings → Data Controls at console.groq.com.
-- **Prompt injection:** selected text could contain instructions aimed at the model. The prompt tells the model never to follow the draft, and the result only goes into your own text field, so you still see it before you press Send. Use ⌥-click to preview when the text came from someone else.
+- **Prompt injection:** selected text could contain instructions aimed at the model. The prompt tells the model never to follow the draft, and the result only goes into your own text field, so you still see it before you press Send. Use ⌥-click to preview when the text came from someone else. The 🇮🇩 translation prompt also treats the selected text as data only, and its result is just shown to you, never pasted automatically.
 - **Clipboard:** the result is pasted through the clipboard, then your previous clipboard is restored. A clipboard-history app may still record the refined text. That stays on your Mac, but it's worth knowing.
 - **API key:** stored in your keychain, local to this Mac. If it was ever pasted somewhere else (a chat, a ticket, a commit), revoke it and create a new one at console.groq.com.
 
@@ -169,8 +171,8 @@ Free-tier limits are per model, about 8K tokens per minute. One refine uses abou
 refine-popclip/
 ├── Refine.popclipext/           # the PopClip extension bundle
 │   ├── Config.json              # name, buttons, settings (API key, model, hidden words)
-│   ├── refine.js                # PopClip entry point: one action per style, calls Groq
-│   ├── prompt.js                # system prompt, styles, default style profile, request body
+│   ├── refine.js                # PopClip entry point: one action per style + 🇮🇩 translate, calls Groq
+│   ├── prompt.js                # system prompts, styles, default style profile, request bodies
 │   ├── redact.js                # privacy guard: mask before sending, restore after
 │   ├── config.js                # loads local.config.js if it exists
 │   └── local.config.example.js  # template for your personal settings
@@ -216,6 +218,7 @@ PopClip's bundled `axios` sends one `POST https://api.groq.com/openai/v1/chat/co
 
 - `temperature` 0.3 and reasoning set to the minimum for each model.
 - The same system prompt for every style (the style goes in the user message), so Groq can cache it.
+- 🇮🇩 Translate uses its own system prompt (`TRANSLATE_SYSTEM_PROMPT` in `prompt.js`), `temperature` 0.2, and goes through the same privacy guard and fallback model. Tune it with `node test/run.mjs --styles translate`.
 
 A few fixes are applied to every reply: em dashes become commas, non-breaking hyphens become plain hyphens, and echoed `<text>` tags are stripped.
 
