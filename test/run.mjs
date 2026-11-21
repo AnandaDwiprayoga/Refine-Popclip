@@ -4,6 +4,7 @@
 //   node test/run.mjs                          # every sample × every style, default model
 //   node test/run.mjs --styles me,fix          # only some styles
 //   node test/run.mjs --styles translate       # the 🇮🇩 Bahasa Indonesia translation
+//   node test/run.mjs --styles spoken          # RefineBar's spoken style (said aloud in meetings)
 //   node test/run.mjs --models all             # compare every model side by side
 //   node test/run.mjs --models openai/gpt-oss-20b
 //   node test/run.mjs --latency 20             # latency benchmark (first sample, "me" style)
@@ -24,6 +25,7 @@ const {
   DEFAULT_MODEL,
   apiHeaders,
   STYLES,
+  SPOKEN,
   buildRequestBody,
   TRANSLATE,
   buildTranslateRequestBody,
@@ -43,11 +45,12 @@ const argValue = (name) => {
   const i = args.indexOf(name);
   return i === -1 ? undefined : args[i + 1];
 };
-// "translate" is accepted as an extra style name; it is not in the default run.
+// "translate" and "spoken" are accepted as extra style names; they are not in the default run.
 const styles = (argValue("--styles") || Object.keys(STYLES).join(",")).split(",");
 const buildBody = (text, styleId, model) =>
   styleId === "translate" ? buildTranslateRequestBody(text, model) : buildRequestBody(text, styleId, model);
-const iconFor = (styleId) => (styleId === "translate" ? TRANSLATE.icon : STYLES[styleId]?.icon ?? "?");
+const iconFor = (styleId) =>
+  styleId === "translate" ? TRANSLATE.icon : styleId === "spoken" ? SPOKEN.icon : (STYLES[styleId]?.icon ?? "?");
 const modelsArg = argValue("--models") || DEFAULT_MODEL;
 const models = modelsArg === "all" ? Object.keys(MODELS) : modelsArg.split(",");
 const latencyRuns = Number(argValue("--latency") || 0);

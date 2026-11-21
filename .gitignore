@@ -25,3 +25,7 @@ test/samples.local.txt
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# RefineBar build output
+RefineBar/.build/
+RefineBar/build/

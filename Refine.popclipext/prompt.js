@@ -81,6 +81,18 @@ const STYLES = {
   },
 };
 
+// Used by the RefineBar menu bar app, not a PopClip button (so it stays out of
+// STYLES). The result is read aloud in a meeting, not sent as a message.
+const SPOKEN = {
+  title: "Refine: Spoken",
+  icon: "🗣️",
+  instruction:
+    "This will be said out loud in a video meeting, not sent as a message. Rewrite it as natural spoken English in the writer's voice: short sentences that are easy to pronounce, everyday words, contractions (I'm, it's, don't). No markdown, bullet points, emoji or Slack formatting. If the draft is a question, keep it a clear question. Keep every fact, name and number.",
+};
+
+// Every style buildRequestBody accepts: the PopClip buttons plus "spoken".
+const ALL_STYLES = { ...STYLES, spoken: SPOKEN };
+
 const SYSTEM_PROMPT = `
 You are a writing assistant that turns a non-native speaker's rough draft into natural English that they can send as-is to an international team (Slack messages, emails, comments).
 
@@ -104,7 +116,7 @@ ${STYLE_PROFILE}
 `.trim();
 
 function buildRequestBody(text, styleId, model = DEFAULT_MODEL) {
-  const style = STYLES[styleId];
+  const style = ALL_STYLES[styleId];
   if (!style) throw new Error(`Unknown style: ${styleId}`);
   if (!MODELS[model]) throw new Error(`Unknown model: ${model}`);
   return {
@@ -191,6 +203,7 @@ module.exports = {
   FALLBACK_MODEL,
   apiHeaders,
   STYLES,
+  SPOKEN,
   SYSTEM_PROMPT,
   buildRequestBody,
   TRANSLATE,

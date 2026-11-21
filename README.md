@@ -12,6 +12,8 @@ you get:      Sorry for the late reply! I just checked and the API is still retu
               Could it be on the BE side? cc @alex
 ```
 
+For video calls there's also **RefineBar**, a small menu bar app: speak or type your question in broken English or Bahasa, and a clean English version appears in a second or two for you to read aloud. [More below](#refinebar-say-it-in-english-in-meetings).
+
 ## Features
 
 | Button | Style | What it does |
@@ -79,6 +81,42 @@ cp Refine.popclipext/local.config.example.js Refine.popclipext/local.config.js
 ```
 
 Edit `local.config.js`, then run `./install.sh` again. This file is **gitignored**, so your real messages and private words never end up in a commit. See [Personal configuration](#personal-configuration).
+
+## RefineBar: say it in English in meetings
+
+Typing a question, translating it, then reading it aloud in Google Meet is slow. RefineBar is a menu bar app that makes it one step:
+
+1. Click the speech bubble icon in the menu bar. A small panel opens.
+2. **Speak:** click 🎙 (or press ⌘R), say it however it comes out ("aku mau tanya, API nya udah di-deploy ke staging belum ya?"), then click ■ Stop.
+   **Or type:** write in the text box. When you stop typing for 1.5 seconds it refines automatically. Keep editing and it refines again after each pause.
+3. The English version appears in large text in about 1–2 seconds:
+   *"Quick question: has the API been deployed to staging yet?"*
+4. Unmute in Meet (hold Space for push-to-talk) and read it aloud in your own voice.
+
+What you said also goes into the text box, so if Whisper misheard a word, fix it there and it refines again. Pick a style under the text box: **Spoken** (the default, made to be said aloud: short, easy-to-pronounce sentences), My style, Polite or Short. ⇧⌘C copies the result.
+
+The panel stays open when you click into Meet, floats above other windows (full-screen Meet too) and can be dragged next to your camera. Press Esc or click the icon to hide it. Right-click the icon to quit.
+
+### Install RefineBar
+
+Needs Xcode or the Xcode Command Line Tools (for `swift`), on macOS 13 or later.
+
+```bash
+./RefineBar/build.sh --install
+```
+
+This builds `RefineBar.app`, copies it to `~/Applications` and opens it. Then:
+
+1. Paste your Groq API key in the panel's settings (⚙). RefineBar keeps its own copy in your keychain, because PopClip's copy is private to PopClip.
+2. Allow microphone access the first time you press 🎙.
+3. **Launch at login** turns on automatically, so the icon is back after a restart. Turn it off in the panel's settings, or in System Settings → General → Login Items.
+
+RefineBar uses the same `prompt.js`, `redact.js` and your `local.config.js` as the PopClip extension, so the style profile and privacy guard are shared. They're copied into the app when you build it, so run `./RefineBar/build.sh --install` again after changing them.
+
+### RefineBar privacy
+
+- **Your voice:** audio is recorded into memory only and never saved to disk. It's sent to Groq's `whisper-large-v3-turbo` speech-to-text model as-is, because sound can't be redacted. Groq's data controls apply (see [Security notes](#security-notes)). The microphone is only on between 🎙 and ■ Stop, up to 2 minutes.
+- **The text:** the transcript, or what you type, goes through the same [privacy guard](#privacy-guard) as the PopClip buttons before the rewrite. RefineBar's "Never send these words" setting works like PopClip's.
 
 ## Personal configuration
 
@@ -149,6 +187,7 @@ pasted:         Please check https://grafana.internal/d/abc. The token is ghp_ab
 - **Groq data controls:** Groq keeps abuse and reliability logs for up to 30 days by default. Turn that off, or enable Zero Data Retention, under Settings → Data Controls at console.groq.com.
 - **Prompt injection:** selected text could contain instructions aimed at the model. The prompt tells the model never to follow the draft, and the result only goes into your own text field, so you still see it before you press Send. Use ⌥-click to preview when the text came from someone else. The 🇮🇩 translation prompt also treats the selected text as data only, and its result is just shown to you, never pasted automatically.
 - **Clipboard:** the result is pasted through the clipboard, then your previous clipboard is restored. A clipboard-history app may still record the refined text. That stays on your Mac, but it's worth knowing.
+- **RefineBar audio:** your voice can't be masked, so recordings go to Groq Whisper as-is. They're held in memory only, never written to disk. See [RefineBar privacy](#refinebar-privacy).
 - **API key:** stored in your keychain, local to this Mac. If it was ever pasted somewhere else (a chat, a ticket, a commit), revoke it and create a new one at console.groq.com.
 
 ## Models
@@ -176,6 +215,10 @@ refine-popclip/
 │   ├── redact.js                # privacy guard: mask before sending, restore after
 │   ├── config.js                # loads local.config.js if it exists
 │   └── local.config.example.js  # template for your personal settings
+├── RefineBar/                   # menu bar app for meetings (Swift, macOS 13+)
+│   ├── Sources/RefineBar/       # panel UI, in-memory recorder, Groq client, JS bridge
+│   ├── Info.plist               # menu-bar-only app, microphone permission text
+│   └── build.sh                 # builds RefineBar.app, bundles the extension's JS, --install
 ├── test/
 │   ├── redact.test.mjs          # privacy guard unit tests (no network)
 │   ├── run.mjs                  # prompt tuning harness (calls Groq)
@@ -200,6 +243,7 @@ export GROQ_API_KEY=gsk_...
 node test/run.mjs                    # every sample × every style
 node test/run.mjs --models all       # compare all models side by side
 node test/run.mjs --styles me,fix    # just some styles
+node test/run.mjs --styles spoken    # RefineBar's spoken style
 node test/run.mjs --latency 10       # p50/p90 latency
 REFINE_HIDDEN_TERMS="Project Falcon" node test/run.mjs   # test with hidden words
 ```
@@ -224,6 +268,19 @@ A few fixes are applied to every reply: em dashes become commas, non-breaking hy
 
 Debug output goes to Console.app: filter on "Refine".
 
+RefineBar runs the same `prompt.js` and `redact.js` inside JavaScriptCore (built into macOS), so the prompt and privacy rules live in one place. Its Swift side records the microphone into an in-memory WAV, sends it to `POST /openai/v1/audio/transcriptions`, then sends the masked transcript through the same chat request and fallback model as the extension. Test it from the terminal without the UI:
+
+```bash
+B=RefineBar/build/RefineBar.app/Contents/MacOS/RefineBar
+$B --dry-run "td aku cek api nya masih error"         # privacy guard + request, no network
+$B --refine "td aku cek api nya masih error"          # full rewrite (Spoken style)
+$B --refine "..." --style polite
+$B --transcribe speech.wav                            # Whisper, then the rewrite
+$B --snapshot panel.png                               # render the panel to a PNG
+```
+
+The key comes from `GROQ_API_KEY`, or from the keychain entry the app saved.
+
 ## Troubleshooting
 
 | Problem | Fix |
@@ -233,6 +290,9 @@ Debug output goes to Console.app: filter on "Refine".
 | I get ✗ | The request failed on both models (network, rate limit, or a broken placeholder). Open Console.app and filter on "Refine" to see why. |
 | "Nothing to refine" | After hiding links, code and secrets, there was no text left to rewrite. |
 | My `local.config.js` changes aren't used | Run `./install.sh` again. PopClip uses its own copy of the extension. |
+| RefineBar says microphone access is off | System Settings → Privacy & Security → Microphone → turn on RefineBar. A rebuild changes the app's ad-hoc signature, so macOS may ask again (and may ask once to let RefineBar read its keychain key). |
+| RefineBar: "Didn't hear anything" | The recording was silent. Check the input device in System Settings → Sound → Input. |
+| RefineBar doesn't come back after a restart | Settings (⚙) → Launch at login, or System Settings → General → Login Items. It only works for the copy in `~/Applications`, installed with `./RefineBar/build.sh --install`. |
 | PopClip's bar overlaps an app's own toolbar | Hide PopClip's built-in Cut/Copy/Paste buttons so the bar stays small, or add the app to PopClip's excluded apps and use PopClip's keyboard shortcut there. |
 
 ## Contributing
