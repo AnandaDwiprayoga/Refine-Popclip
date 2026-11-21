@@ -29,3 +29,6 @@ test/samples.local.txt
 # RefineBar build output
 RefineBar/.build/
 RefineBar/build/
+
+# RefineCore build output
+RefineCore/.build/

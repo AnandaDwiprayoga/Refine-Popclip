@@ -1,23 +1,28 @@
 import Foundation
 
-struct GroqError: LocalizedError {
-    let status: Int?
-    let message: String
-    var errorDescription: String? { message }
+public struct GroqError: LocalizedError {
+    public let status: Int?
+    public let message: String
+    public var errorDescription: String? { message }
+
+    public init(status: Int?, message: String) {
+        self.status = status
+        self.message = message
+    }
 }
 
 /// Groq's OpenAI-compatible API: Whisper transcription and chat completions.
-enum Groq {
-    static let transcriptionURL = URL(string: "https://api.groq.com/openai/v1/audio/transcriptions")!
-    static let whisperModel = "whisper-large-v3-turbo"
+public enum Groq {
+    public static let transcriptionURL = URL(string: "https://api.groq.com/openai/v1/audio/transcriptions")!
+    public static let whisperModel = "whisper-large-v3-turbo"
 
     /// Whisper uses the prompt as "what came before", so a code-switched sample
     /// nudges it to keep English words in English and Bahasa words in Bahasa.
-    static let whisperHint =
+    public static let whisperHint =
         "Oke, jadi aku mau tanya soal API yang di staging, udah di-deploy belum ya? The BE team said the PR is merged, tapi masih error 500."
 
     /// Sends an in-memory WAV and returns the transcript. Nothing is written to disk.
-    static func transcribe(wav: Data, apiKey: String) async throws -> String {
+    public static func transcribe(wav: Data, apiKey: String) async throws -> String {
         let boundary = "RefineBar-\(UUID().uuidString)"
         var body = Data()
         func field(_ name: String, _ value: String) {
@@ -45,7 +50,7 @@ enum Groq {
     }
 
     /// Posts a chat completions body built by prompt.js and returns the raw JSON reply.
-    static func chat(url: URL, body: Data, apiKey: String) async throws -> Data {
+    public static func chat(url: URL, body: Data, apiKey: String) async throws -> Data {
         var request = URLRequest(url: url, timeoutInterval: 15)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")

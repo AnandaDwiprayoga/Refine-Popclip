@@ -1,3 +1,4 @@
+import RefineCore
 import Foundation
 
 /// Self-test commands, run from the terminal without the menu bar UI:

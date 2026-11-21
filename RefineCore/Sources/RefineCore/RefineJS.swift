@@ -6,53 +6,54 @@ import JavaScriptCore
 /// privacy guard live in one place and behave exactly like the PopClip buttons.
 /// Not thread-safe: use it from the main actor only.
 @MainActor
-final class RefineJS {
-    struct Prepared {
-        let masked: String
-        let itemsJSON: String
-        let hiddenCount: Int
-        let refinable: Bool
+public final class RefineJS {
+    public struct Prepared {
+        public let masked: String
+        public let itemsJSON: String
+        public let hiddenCount: Int
+        public let refinable: Bool
     }
 
-    struct Info: Decodable {
-        let apiURL: String
-        let defaultModel: String
-        let fallbackModel: String
+    public struct Info: Decodable {
+        public let apiURL: String
+        public let defaultModel: String
+        public let fallbackModel: String
     }
 
-    struct JSError: LocalizedError {
-        let message: String
-        let isPlaceholderError: Bool
-        var errorDescription: String? { message }
+    public struct JSError: LocalizedError {
+        public let message: String
+        public let isPlaceholderError: Bool
+        public var errorDescription: String? { message }
     }
 
     private let context: JSContext
     private let bridge: JSValue
-    let info: Info
+    public let info: Info
 
     /// The files the bridge loads. local.config.js is optional.
-    static let files = ["config.js", "prompt.js", "redact.js", "local.config.js"]
+    public static let files = ["config.js", "prompt.js", "redact.js", "local.config.js"]
 
-    /// Finds the JS next to the app (Contents/Resources/js), or in REFINE_JS_DIR.
-    static func defaultDirectory() -> URL? {
+    /// Finds the JS next to the app or extension (Resources/js on macOS, js/ in an
+    /// iOS bundle), or in REFINE_JS_DIR.
+    public static func defaultDirectory(bundle: Bundle = .main) -> URL? {
         if let dir = ProcessInfo.processInfo.environment["REFINE_JS_DIR"] {
             return URL(fileURLWithPath: dir)
         }
-        if let res = Bundle.main.resourceURL?.appendingPathComponent("js"),
+        if let res = bundle.resourceURL?.appendingPathComponent("js"),
            FileManager.default.fileExists(atPath: res.appendingPathComponent("prompt.js").path) {
             return res
         }
         return nil
     }
 
-    init(directory: URL) throws {
+    public init(directory: URL) throws {
         var sources: [String: String] = [:]
         for name in Self.files {
             let url = directory.appendingPathComponent(name)
             if let text = try? String(contentsOf: url, encoding: .utf8) {
                 sources[name] = text
             } else if name != "local.config.js" {
-                throw JSError(message: "Missing \(name) in \(directory.path). Rebuild with build.sh.", isPlaceholderError: false)
+                throw JSError(message: "Missing \(name) in \(directory.path). Rebuild to bundle Refine's JS.", isPlaceholderError: false)
             }
         }
 
@@ -103,6 +104,12 @@ final class RefineJS {
             body(masked, styleId, model) {
               return JSON.stringify(prompt.buildRequestBody(masked, styleId, model));
             },
+            translateBody(masked, model) {
+              return JSON.stringify(prompt.buildTranslateRequestBody(masked, model));
+            },
+            wrap(original, rewritten) {
+              return prompt.keepSurroundingWhitespace(String(original), String(rewritten));
+            },
             finish(responseJSON, itemsJSON) {
               try {
                 return redact.restore(prompt.extractText(JSON.parse(responseJSON)), JSON.parse(itemsJSON));
@@ -129,20 +136,31 @@ final class RefineJS {
         self.info = try JSONDecoder().decode(Info.self, from: Data(infoJSON.utf8))
     }
 
-    func prepare(_ text: String, hiddenTerms: String) throws -> Prepared {
+    public func prepare(_ text: String, hiddenTerms: String) throws -> Prepared {
         struct Raw: Decodable { let masked: String; let items: String; let hiddenCount: Int; let refinable: Bool }
         let json = try Self.call(context, bridge, "prepare", [text, hiddenTerms])
         let raw = try JSONDecoder().decode(Raw.self, from: Data(json.utf8))
         return Prepared(masked: raw.masked, itemsJSON: raw.items, hiddenCount: raw.hiddenCount, refinable: raw.refinable)
     }
 
-    func requestBody(masked: String, style: String, model: String) throws -> Data {
+    /// The chat request for a rewrite in one of prompt.js's styles (me, polite, short, fix, spoken).
+    public func requestBody(masked: String, style: String, model: String) throws -> Data {
         Data(try Self.call(context, bridge, "body", [masked, style, model]).utf8)
+    }
+
+    /// The chat request for the 🇮🇩 translation into Bahasa Indonesia.
+    public func translateBody(masked: String, model: String) throws -> Data {
+        Data(try Self.call(context, bridge, "translateBody", [masked, model]).utf8)
+    }
+
+    /// Keeps the leading/trailing whitespace of the original around a rewrite.
+    public func keepSurroundingWhitespace(original: String, rewritten: String) throws -> String {
+        try Self.call(context, bridge, "wrap", [original, rewritten])
     }
 
     /// Reads the model's reply and puts the hidden items back. Throws if a
     /// placeholder was lost, so a broken result is never shown.
-    func finish(response: Data, itemsJSON: String) throws -> String {
+    public func finish(response: Data, itemsJSON: String) throws -> String {
         let json = String(decoding: response, as: UTF8.self)
         return try Self.call(context, bridge, "finish", [json, itemsJSON])
     }

@@ -215,8 +215,10 @@ refine-popclip/
 │   ├── redact.js                # privacy guard: mask before sending, restore after
 │   ├── config.js                # loads local.config.js if it exists
 │   └── local.config.example.js  # template for your personal settings
+├── RefineCore/                  # shared Swift package (macOS + iOS): JS bridge, Groq client, refine/translate flow
+│   └── Tests/                   # no-network tests against the real prompt.js / redact.js
 ├── RefineBar/                   # menu bar app for meetings (Swift, macOS 13+)
-│   ├── Sources/RefineBar/       # panel UI, in-memory recorder, Groq client, JS bridge
+│   ├── Sources/RefineBar/       # panel UI, in-memory recorder, keychain, CLI
 │   ├── Info.plist               # menu-bar-only app, microphone permission text
 │   └── build.sh                 # builds RefineBar.app, bundles the extension's JS, --install
 ├── test/
@@ -232,7 +234,10 @@ The privacy guard tests need no API key and no network:
 
 ```bash
 node --test test/
+swift test --package-path RefineCore   # the Swift bridge, against the same JS
 ```
+
+`RefineCore` is also used by **Refine Keyboard**, the iPhone version, which lives in its own repo and includes this one as a git submodule.
 
 ### Tune the prompt without PopClip
 

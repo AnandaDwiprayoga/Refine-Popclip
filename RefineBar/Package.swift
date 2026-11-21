@@ -6,7 +6,14 @@ import PackageDescription
 let package = Package(
     name: "RefineBar",
     platforms: [.macOS(.v13)],
+    dependencies: [
+        .package(path: "../RefineCore")
+    ],
     targets: [
-        .executableTarget(name: "RefineBar", path: "Sources/RefineBar")
+        .executableTarget(
+            name: "RefineBar",
+            dependencies: [.product(name: "RefineCore", package: "RefineCore")],
+            path: "Sources/RefineBar"
+        )
     ]
 )
