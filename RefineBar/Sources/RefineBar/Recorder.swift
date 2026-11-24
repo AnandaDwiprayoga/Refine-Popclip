@@ -28,7 +28,10 @@ final class Recorder {
     /// Called on the main thread with the current input level (0...1).
     var onLevel: ((Float) -> Void)?
 
-    private let engine = AVAudioEngine()
+    /// Created for each recording and released in `stop()`. A long-lived engine
+    /// keeps its input unit configured after `stop()`, which leaves Bluetooth
+    /// headphones stuck in low-quality headset (HFP) mode until the app quits.
+    private var engine: AVAudioEngine?
     private let lock = NSLock()
     private var samples: [Int16] = []
     private var peak: Float = 0
@@ -45,13 +48,17 @@ final class Recorder {
 
     func start() throws {
         guard !isRecording else { return }
+        let engine = AVAudioEngine()
         let input = engine.inputNode
         let inFormat = input.outputFormat(forBus: 0)
         guard inFormat.sampleRate > 0, inFormat.channelCount > 0,
               let outFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: Self.sampleRate,
                                             channels: 1, interleaved: true),
               let converter = AVAudioConverter(from: inFormat, to: outFormat)
-        else { throw RecorderError.noMicrophone }
+        else {
+            engine.reset()
+            throw RecorderError.noMicrophone
+        }
 
         self.converter = converter
         lock.lock()
@@ -68,18 +75,23 @@ final class Recorder {
             try engine.start()
         } catch {
             input.removeTap(onBus: 0)
+            engine.reset()
+            self.converter = nil
             throw error
         }
+        self.engine = engine
         isRecording = true
     }
 
     /// Stops and returns the recording as an in-memory WAV, then frees the samples.
     func stop() -> Recording {
-        if isRecording {
+        if let engine {
             engine.inputNode.removeTap(onBus: 0)
             engine.stop()
-            isRecording = false
+            engine.reset()
+            self.engine = nil  // releasing the engine frees the mic, so headphones return to A2DP
         }
+        isRecording = false
         converter = nil
         lock.lock()
         let captured = samples
