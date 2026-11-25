@@ -25,6 +25,7 @@ you get:      Sorry for the late reply! I just checked and the API is still retu
 - **Click** a button to replace the selection. Press **⌘Z** to undo. Your clipboard is restored afterwards.
 - **⌥-click** (Option-click) to see a preview in the PopClip bubble first. Click the preview to paste it.
 - The rewrite buttons only appear in editable text fields.
+- **Add context with `/*`:** anything after `/*` is a note for the model only, in Bahasa, English or a mix. It helps Refine get tense, timing, who's who or the audience right, and it's left out of the result. [Details below](#add-context-with-).
 - **🇮🇩 Translate** works on any selected text, including web pages, PDFs and messages from others. Short translations show in the PopClip bubble. Longer ones (over 160 characters, PopClip's bubble limit) open full screen in Large Type and are also copied to your clipboard. In an editable field you can click the bubble to paste the translation.
 - Keeps `@mentions`, `#channels`, links, code, emoji, ticket keys (`REP-1234`), numbers and Slack formatting intact.
 - **Privacy guard:** links, emails, API keys, passwords, phone numbers, card numbers, code and your own private words are replaced with placeholders *before* anything leaves your Mac. [More below](#privacy-guard).
@@ -69,6 +70,20 @@ In the same settings you can pick the [model](#models) and list words that shoul
 ### 5. Try it
 
 Type something like `td aku udh cek, tp blm fix ya` into any text field, select it, and click ✨ in the PopClip bar.
+
+### Add context with `/*`
+
+Bahasa often leaves out things English needs, like tense. Add a note after `/*` to tell Refine what you mean. The note can be Bahasa, English or a mix, and it never ends up in the result:
+
+| You select | Refine pastes |
+|---|---|
+| `saya mandi di seberang /*i already finish mandi` | I took a bath across the street. |
+| `saya mandi di seberang /*nanti sore` | I'll take a bath across the street. |
+| `dia udah approve PR nya /*dia = Budi, BE lead` | Budi already approved the PR. |
+
+- The note runs to the end of the selection. To put one in the middle, close it with `*/`: `aku deploy /*besok pagi*/ terus kabarin QA ya`.
+- `/*` only starts a note at the beginning or after a space, so paths like `src/*.js` stay part of the text. It works in every rewrite style, but not in 🇮🇩 Translate.
+- Notes go through the [privacy guard](#privacy-guard) like the rest of the text.
 
 ### 6. Make it sound like you (recommended)
 
@@ -178,6 +193,7 @@ refine-popclip/
 │   └── local.config.example.js  # template for your personal settings
 ├── test/
 │   ├── redact.test.mjs          # privacy guard unit tests (no network)
+│   ├── context.test.mjs         # /* writer's note tests (no network)
 │   ├── run.mjs                  # prompt tuning harness (calls Groq)
 │   └── samples.txt              # example drafts for run.mjs
 └── install.sh                   # validates and installs the extension into PopClip
