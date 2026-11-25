@@ -1,6 +1,7 @@
 // PopClip module.
 // Style buttons (editable fields only): click = replace the selection.
 //   Option-click (⌥) = show a preview in the PopClip bubble; click the preview to paste.
+//   Text after "/*" (to "*/" or the end) is a note for the model, left out of the result.
 // 🇮🇩 button (any selection): shows a Bahasa Indonesia translation, never replaces.
 
 const axios = require("axios");
@@ -11,6 +12,7 @@ const {
   FALLBACK_MODEL,
   apiHeaders,
   STYLES,
+  prepareRewrite,
   buildRequestBody,
   TRANSLATE,
   buildTranslateRequestBody,
@@ -25,7 +27,8 @@ const BUBBLE_MAX_CHARS = 160;
 // Shared by every button: key check, privacy guard, request, fallback model.
 // `buildBody(maskedText, model)` builds the Groq request. Returns the model's reply
 // with hidden items put back, or null when there is nothing worth sending.
-async function runWithGuard(input, options, buildBody) {
+// `notes: true` (rewrites) honors "/*" writer's notes; translations take the text as is.
+async function runWithGuard(input, options, buildBody, { notes = false } = {}) {
   const apiKey = (options.apiKey || "").trim();
   if (!apiKey) {
     // Opens this extension's settings so the key can be entered.
@@ -35,8 +38,10 @@ async function runWithGuard(input, options, buildBody) {
 
   // Privacy guard: links, emails, keys, code, phone numbers, IDs and your hidden
   // terms are swapped for placeholders here, on the Mac. Only `masked` is sent.
-  const { masked, items } = redact(input.text.trim(), options.hiddenTerms);
-  if (!hasRefinableText(masked)) return null;
+  // Notes are masked too: the split happens after redact().
+  const { masked, items: allItems } = redact(input.text.trim(), options.hiddenTerms);
+  const { draft, items } = notes ? prepareRewrite(masked, allItems) : { draft: masked, items: allItems };
+  if (!hasRefinableText(draft)) return null;
   if (items.length) print(`Refine: hid ${items.length} item(s): ${items.map((i) => i.placeholder).join(", ")}`);
 
   // Restoring inside the attempt means a reply that lost a placeholder counts as a
@@ -61,7 +66,9 @@ async function runWithGuard(input, options, buildBody) {
 }
 
 async function refine(styleId, input, options) {
-  const rewritten = await runWithGuard(input, options, (text, model) => buildRequestBody(text, styleId, model));
+  const rewritten = await runWithGuard(input, options, (text, model) => buildRequestBody(text, styleId, model), {
+    notes: true,
+  });
   if (rewritten === null) {
     popclip.showText("Nothing to refine");
     return;

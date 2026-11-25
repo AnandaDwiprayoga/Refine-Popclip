@@ -181,8 +181,9 @@ function restore(rewritten, items) {
   for (const found of text.match(/\{\{[A-Z]+_\d+\}\}/g) || []) {
     if (!known.has(found)) throw new PlaceholderError(`Model invented placeholder ${found}`);
   }
-  for (const { placeholder } of items) {
-    if (!text.includes(placeholder)) throw new PlaceholderError(`Model dropped placeholder ${placeholder}`);
+  // Items marked optional (e.g. only in a writer's note) may be left out of the reply.
+  for (const { placeholder, optional } of items) {
+    if (!optional && !text.includes(placeholder)) throw new PlaceholderError(`Model dropped placeholder ${placeholder}`);
   }
   // Restore newest first: a later mask may contain an earlier placeholder.
   for (const { placeholder, value } of [...items].reverse()) {

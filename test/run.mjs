@@ -26,6 +26,8 @@ const {
   apiHeaders,
   STYLES,
   SPOKEN,
+  splitContext,
+  prepareRewrite,
   buildRequestBody,
   TRANSLATE,
   buildTranslateRequestBody,
@@ -66,7 +68,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Same privacy guard as the extension: only the masked text is sent.
 async function callModel(text, styleId, model, attempt = 1) {
-  const { masked, items } = redact(text, hiddenTerms);
+  const { masked, items: allItems } = redact(text, hiddenTerms);
+  // Rewrites honor "/*" writer's notes like the extension; translations don't.
+  const items = styleId === "translate" ? allItems : prepareRewrite(masked, allItems).items;
   const started = performance.now();
   const res = await fetch(API_URL, {
     method: "POST",
@@ -96,7 +100,9 @@ const PROTECTED = [
 ];
 const PREAMBLE = /^(here('s| is)|sure|certainly|rewritten|revised|berikut|terjemahan|"|')/i;
 
-function check(input, output) {
+function check(input, output, styleId) {
+  // A writer's note is left out of a rewrite, so only the draft's tokens must survive.
+  if (styleId !== "translate") input = splitContext(input).draft;
   const problems = [];
   for (const pattern of PROTECTED) {
     for (const token of input.match(pattern) || []) {
@@ -105,7 +111,7 @@ function check(input, output) {
   }
   if (PREAMBLE.test(output)) problems.push("starts with preamble/quote");
   if (/—/.test(output)) problems.push("contains em dash");
-  if (/<\/?(text|style)>/i.test(output)) problems.push("echoed tags");
+  if (/<\/?(text|style|context)>/i.test(output)) problems.push("echoed tags");
   return problems;
 }
 
@@ -141,7 +147,7 @@ for (const [i, sample] of samples.entries()) {
       const label = `${iconFor(styleId)} ${styleId}${models.length > 1 ? ` · ${short(model)}` : ""}`;
       try {
         const { text, ms } = await callModel(sample, styleId, model);
-        const problems = check(sample, text);
+        const problems = check(sample, text, styleId);
         if (problems.length) failures++;
         console.log(`\n${label}  (${ms} ms)${problems.length ? `  ⚠️  ${problems.join(", ")}` : ""}`);
         console.log(text);

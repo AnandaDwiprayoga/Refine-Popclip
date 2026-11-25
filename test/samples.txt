@@ -20,3 +20,10 @@ key staging nya gsk_Ab12Cd34Ef56Gh78Ij90Kl12Mn34Op56Qr78St90Uv12Wx34 udah aku ro
 password: hunter2 buat akun test nya, tp jgn di share ke luar tim ya
 ---
 kenapa `getAllocationByAmount()` return null kalo `selected_bill_ids` kosong? NIK user nya 3171234567890002
+---
+# writer's notes: text after /* is context for the model, never in the output
+saya mandi di seberang /*i already finish mandi
+---
+aku review PR nya /*besok pagi, belum mulai*/ terus kabarin @alex ya
+---
+dia bilang endpoint nya udah fix di staging /*dia = Budi, BE lead. this is for my manager
