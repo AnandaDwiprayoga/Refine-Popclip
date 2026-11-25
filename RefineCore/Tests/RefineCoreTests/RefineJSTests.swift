@@ -83,6 +83,28 @@ final class RefineJSTests: XCTestCase {
         }
     }
 
+    func testWritersNoteIsContextOnly() throws {
+        let prepared = try js.prepare("saya mandi /*udah selesai, lihat https://example.com/a", hiddenTerms: "")
+        XCTAssertTrue(prepared.refinable)
+        XCTAssertFalse(prepared.masked.contains("example.com"))
+        let message = try userMessage(try js.requestBody(masked: prepared.masked, style: "spoken", model: js.info.defaultModel))
+        XCTAssertTrue(message.user.contains("<context>\nudah selesai, lihat {{LINK_1}}\n</context>"))
+        XCTAssertTrue(message.user.contains("<text>\nsaya mandi\n</text>"))
+        // The note's link is optional: a reply without it is fine.
+        let output = try js.finish(response: reply("I took a bath."), itemsJSON: prepared.itemsJSON)
+        XCTAssertEqual(output, "I took a bath.")
+    }
+
+    func testNoteOnlyIsNotRefinable() throws {
+        XCTAssertFalse(try js.prepare("/*cuma catatan", hiddenTerms: "").refinable)
+    }
+
+    func testTranslateKeepsSlashStarAsText() throws {
+        let prepared = try js.prepare("https://example.com/a /*b", hiddenTerms: "", notes: false)
+        XCTAssertTrue(prepared.refinable)
+        XCTAssertThrowsError(try js.finish(response: reply("Lihat."), itemsJSON: prepared.itemsJSON))
+    }
+
     func testKeepSurroundingWhitespace() throws {
         XCTAssertEqual(try js.keepSurroundingWhitespace(original: " hi there\n", rewritten: "Hi there!"), " Hi there!\n")
     }

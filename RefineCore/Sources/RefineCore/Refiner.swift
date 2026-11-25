@@ -31,7 +31,7 @@ public final class Refiner {
     public func run(_ text: String, mode: Mode, hiddenTerms: String, apiKey: String) async throws -> String? {
         // Only `masked` leaves the device: links, emails, keys, code, numbers and your
         // hidden terms are placeholders by now.
-        let prepared = try js.prepare(text, hiddenTerms: hiddenTerms)
+        let prepared = try js.prepare(text, hiddenTerms: hiddenTerms, notes: mode != .translate)
         guard prepared.refinable else { return nil }
 
         func attempt(_ model: String) async throws -> String {

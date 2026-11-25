@@ -23,6 +23,21 @@ enum Main {
 final class FloatingPanel: NSPanel {
     override var canBecomeKey: Bool { true }
 
+    /// Called whenever the panel hides: the menu bar icon, the menu, Esc or the close button.
+    var onHide: (() -> Void)?
+
+    override func orderOut(_ sender: Any?) {
+        let wasVisible = isVisible
+        super.orderOut(sender)
+        if wasVisible { onHide?() }
+    }
+
+    override func close() {
+        let wasVisible = isVisible
+        super.close()
+        if wasVisible { onHide?() }
+    }
+
     /// A menu-bar-only app has no Edit menu, which is where ⌘V, ⌘C, ⌘X, ⌘A and ⌘Z
     /// normally come from, so text fields would ignore them. Send them to the
     /// focused field directly. The panel's own shortcuts (⌘R, ⇧⌘C) go first.
@@ -91,6 +106,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
         panel.standardWindowButton(.zoomButton)?.isHidden = true
+        // Each time it opens, it starts empty.
+        panel.onHide = { [weak self] in self?.model.panelClosed() }
 
         LoginItem.enableOnFirstRun()
 

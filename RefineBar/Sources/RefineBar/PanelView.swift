@@ -98,7 +98,7 @@ struct PanelView: View {
                 .padding(6)
                 .frame(minHeight: 64, maxHeight: 120)
             if model.draft.isEmpty {
-                Text("Type it")
+                Text("Type it. Add /* for a note only Refine sees, like /*udah selesai")
                     .font(.body)
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 11)

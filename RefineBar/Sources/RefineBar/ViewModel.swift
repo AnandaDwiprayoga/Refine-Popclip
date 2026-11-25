@@ -255,6 +255,19 @@ final class ViewModel: ObservableObject {
         copied = false
     }
 
+    /// The panel was hidden: drop the draft and result, and discard a recording in
+    /// progress so nothing is transcribed after the panel is gone.
+    func panelClosed() {
+        if isRecording {
+            timerTask?.cancel()
+            _ = recorder.stop()
+            isRecording = false
+            onRecordingChange?(false)
+            level = 0
+        }
+        clear()
+    }
+
     func saveAPIKey(_ key: String) -> Bool {
         let ok = Keychain.setAPIKey(key)
         hasAPIKey = Keychain.apiKey() != nil

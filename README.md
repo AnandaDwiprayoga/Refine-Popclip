@@ -84,7 +84,7 @@ Bahasa often leaves out things English needs, like tense. Add a note after `/*` 
 | `dia udah approve PR nya /*dia = Budi, BE lead` | Budi already approved the PR. |
 
 - The note runs to the end of the selection. To put one in the middle, close it with `*/`: `aku deploy /*besok pagi*/ terus kabarin QA ya`.
-- `/*` only starts a note at the beginning or after a space, so paths like `src/*.js` stay part of the text. It works in every rewrite style, but not in 🇮🇩 Translate.
+- `/*` only starts a note at the beginning or after a space, so paths like `src/*.js` stay part of the text. It works in every rewrite style and in RefineBar, but not in 🇮🇩 Translate.
 - Notes go through the [privacy guard](#privacy-guard) like the rest of the text.
 
 ### 6. Make it sound like you (recommended)
@@ -108,9 +108,9 @@ Typing a question, translating it, then reading it aloud in Google Meet is slow.
    *"Quick question: has the API been deployed to staging yet?"*
 4. Unmute in Meet (hold Space for push-to-talk) and read it aloud in your own voice.
 
-What you said also goes into the text box, so if Whisper misheard a word, fix it there and it refines again. Pick a style under the text box: **Spoken** (the default, made to be said aloud: short, easy-to-pronounce sentences), My style, Polite or Short. ⇧⌘C copies the result.
+What you said also goes into the text box, so if Whisper misheard a word, fix it there and it refines again. Add a [`/*` note](#add-context-with-) for context only Refine sees, like `aku review PR nya /*besok pagi`. Pick a style under the text box: **Spoken** (the default, made to be said aloud: short, easy-to-pronounce sentences), My style, Polite or Short. ⇧⌘C copies the result.
 
-The panel stays open when you click into Meet, floats above other windows (full-screen Meet too) and can be dragged next to your camera. Press Esc or click the icon to hide it. Right-click the icon to quit.
+The panel stays open when you click into Meet, floats above other windows (full-screen Meet too) and can be dragged next to your camera. Press Esc or click the icon to hide it. Hiding it clears the text and the result (and discards a recording in progress), so it opens empty next time. Right-click the icon to quit.
 
 ### Install RefineBar
 

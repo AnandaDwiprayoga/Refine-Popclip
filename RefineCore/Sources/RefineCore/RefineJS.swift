@@ -92,13 +92,15 @@ public final class RefineJS {
                 fallbackModel: prompt.FALLBACK_MODEL,
               });
             },
-            prepare(text, hiddenTerms) {
-              const { masked, items } = redact.redact(String(text).trim(), hiddenTerms || "");
+            prepare(text, hiddenTerms, notes) {
+              const { masked, items: allItems } = redact.redact(String(text).trim(), hiddenTerms || "");
+              // Rewrites honor "/*" writer's notes, like refine.js does.
+              const { draft, items } = notes ? prompt.prepareRewrite(masked, allItems) : { draft: masked, items: allItems };
               return JSON.stringify({
                 masked,
                 items: JSON.stringify(items),
                 hiddenCount: items.length,
-                refinable: redact.hasRefinableText(masked),
+                refinable: redact.hasRefinableText(draft),
               });
             },
             body(masked, styleId, model) {
@@ -136,9 +138,11 @@ public final class RefineJS {
         self.info = try JSONDecoder().decode(Info.self, from: Data(infoJSON.utf8))
     }
 
-    public func prepare(_ text: String, hiddenTerms: String) throws -> Prepared {
+    /// Masks the text for sending. With `notes` (rewrites), text after "/*" is a writer's
+    /// note: it's masked too, sent as context, and left out of the result.
+    public func prepare(_ text: String, hiddenTerms: String, notes: Bool = true) throws -> Prepared {
         struct Raw: Decodable { let masked: String; let items: String; let hiddenCount: Int; let refinable: Bool }
-        let json = try Self.call(context, bridge, "prepare", [text, hiddenTerms])
+        let json = try Self.call(context, bridge, "prepare", [text, hiddenTerms, notes])
         let raw = try JSONDecoder().decode(Raw.self, from: Data(json.utf8))
         return Prepared(masked: raw.masked, itemsJSON: raw.items, hiddenCount: raw.hiddenCount, refinable: raw.refinable)
     }
